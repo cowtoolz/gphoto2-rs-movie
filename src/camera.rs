@@ -138,6 +138,28 @@ impl Camera {
     .context(context)
   }
 
+  /// Capture movie
+  pub fn capture_movie(&self) -> Task<Result<CameraFilePath>> {
+    let camera = self.camera;
+    let context = self.context.inner;
+
+    unsafe {
+      Task::new(move || {
+        let mut inner = UninitBox::uninit();
+
+        try_gp_internal!(gp_camera_capture(
+          *camera,
+          libgphoto2_sys::CameraCaptureType::GP_CAPTURE_MOVIE,
+          inner.as_mut_ptr(),
+          *context
+        )?);
+
+        Ok(CameraFilePath { inner: inner.assume_init() })
+      })
+    }
+    .context(context)
+  }
+
   /// Trigger a capture, without waiting for an image to be returned.
   ///
   /// The image can later be retreived by listening for the [`CameraEvent::NewFile`] event.
